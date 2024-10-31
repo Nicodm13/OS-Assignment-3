@@ -65,20 +65,53 @@ int aq_send( AlarmQueue aq, void * msg, MsgKind k){
         // Return success
         return 0;
     }
-
-  return AQ_NOT_IMPL;
 }
 
-int aq_recv( AlarmQueue aq, void * * msg) {
-  return AQ_NOT_IMPL;
+int aq_recv( AlarmQueue aq, void **msg) {
+    Queue *queue = (Queue *)aq;
+
+    // Check whether this is an alarm message, a normal message or no message
+    if(queue->alarm_msg != NULL) {
+        // Set the pointer to the alarm message
+        *msg = queue->alarm_msg;
+
+        // Clear the alarm message from the queue
+        queue->alarm_msg = NULL;
+        return AQ_ALARM;
+    }
+    else if (queue->head != NULL) {
+        // Set the pointer to the message of the head note
+        *msg = queue->head->message;
+
+        // Temporarily store the head note
+        Node *temp = queue->head;
+
+        // Move the head pointer to the next node
+        queue->head = queue->head->next;
+
+        // If the list is empty, also reset the tail
+        if(queue->head == NULL){
+            queue->tail = NULL;
+        }
+
+        // Free the memory of the original head note
+        free(temp);
+        return  AQ_NORMAL;
+    }
+    else {
+        // If no messages are present in the queue.
+        // Set the pointer to null
+        *msg = NULL;
+        return AQ_NO_MSG;
+    }
 }
 
 int aq_size( AlarmQueue aq) {
-  return 0;
+    return 0;
 }
 
 int aq_alarms( AlarmQueue aq) {
-  return 0;
+    return 0;
 }
 
 
