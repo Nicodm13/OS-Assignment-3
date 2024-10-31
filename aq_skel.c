@@ -6,9 +6,22 @@
  */
 
 #include "aq.h"
+#include "stdlib.h"
 
 AlarmQueue aq_create( ) {
-  return NULL;
+    Queue  *queue = malloc(sizeof(Queue));
+    if(!queue) {
+        // Return null if the memory allocation fails
+        return NULL;
+    }
+
+    // Initialize the Queue
+    queue->head = NULL;
+    queue->tail = NULL;
+    queue->alarm_msg = NULL;
+
+    // Return the opaque pointer to the new Queue
+    return (AlarmQueue)queue;
 }
 
 int aq_send( AlarmQueue aq, void * msg, MsgKind k){
