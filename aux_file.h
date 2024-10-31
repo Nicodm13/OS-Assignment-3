@@ -1,5 +1,5 @@
-#ifndef AUX_H_INCLUDED
-#define AUX_H_INCLUDED
+#ifndef AUX_FILE_H_INCLUDED
+#define AUX_FILE_H_INCLUDED
 
 
 #include "aq.h"
@@ -24,5 +24,5 @@ int print_sizes(AlarmQueue q);
 /* Sleep in milliseconds */
 void  msleep(int ms);
 
-#endif /* AUX_H_INCLUDED */
+#endif /* AUX_FILE_H_INCLUDED */
 
