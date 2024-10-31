@@ -25,6 +25,47 @@ AlarmQueue aq_create( ) {
 }
 
 int aq_send( AlarmQueue aq, void * msg, MsgKind k){
+    Queue  *queue = (Queue *)aq;
+
+    // Check whether this message is an alarm
+    if(k == AQ_ALARM) {
+        if(queue->alarm_msg != NULL){
+            // Alarm Message is already present, return an error.
+            return AQ_NO_ROOM;
+        }
+        queue->alarm_msg = msg;
+
+        // Return success
+        return 0;
+    }
+    else {
+        Node *newNode = malloc(sizeof(Node));
+
+        if(newNode == NULL){
+            // Return uninitialized as the memory allocation failed
+            return AQ_UNINIT;
+        }
+
+        // Initialize the new node, which is last in the list
+        newNode->message = msg;
+        newNode->next = NULL;
+
+        // Check if the queue is empty
+        if(queue->tail == NULL) {
+            // Queue is empty, the new node is both head and tail
+            queue->head = newNode;
+            queue->tail = newNode;
+        }
+        else{
+            // If the queue is not empty, append the new node at the end
+            queue->tail->next = newNode;
+            queue->tail = newNode;
+        }
+
+        // Return success
+        return 0;
+    }
+
   return AQ_NOT_IMPL;
 }
 
