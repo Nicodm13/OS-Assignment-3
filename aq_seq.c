@@ -107,11 +107,25 @@ int aq_recv( AlarmQueue aq, void **msg) {
 }
 
 int aq_size( AlarmQueue aq) {
-    return 0;
+    Queue *queue = (Queue * )aq;
+    int count = 0;
+
+    // Loop through the list to count the normal messages
+    Node *current = queue->head;
+    while (current != NULL){
+        count++;
+        current = current->next;
+    }
+
+    // Add 1 to count if there is an alarm message present
+    return count + (queue->alarm_msg != NULL ? 1 : 0);
 }
 
 int aq_alarms( AlarmQueue aq) {
-    return 0;
+    Queue *queue = (Queue * )aq;
+
+    // Return 1 to if there is an alarm message present, otherwise return 0
+    return (queue->alarm_msg != NULL ? 1 : 0);
 }
 
 

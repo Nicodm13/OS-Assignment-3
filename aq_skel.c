@@ -6,7 +6,6 @@
  */
 
 #include "aq.h"
-#include "stdlib.h"
 
 AlarmQueue aq_create( ) {
     return NULL;
