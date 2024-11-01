@@ -90,10 +90,63 @@ int aq_send( AlarmQueue aq, void * msg, MsgKind k){
     }
 }
 
-int aq_recv( AlarmQueue aq, void * * msg) {
-  return AQ_NOT_IMPL;
-}
 
+int aq_recv( AlarmQueue aq, void **msg) {
+    SafeThreadQueue *queue = (SafeThreadQueue *)aq;
+    pthread_mutex_lock(&queue->lock);
+
+    // Wait until a message is available
+    while (queue->head == NULL && queue->alarm_msg == NULL) {
+        pthread_cond_wait(&queue->msg_cond, &queue->lock);
+    }
+
+    // Check whether this is an alarm message, a normal message or no message
+    if(queue->alarm_msg != NULL) {
+        // Set the pointer to the alarm message
+        *msg = queue->alarm_msg;
+
+        // Clear the alarm message from the queue
+        queue->alarm_msg = NULL;
+
+        // Signal an alarm message for the queue
+        pthread_cond_signal(&queue->alarm_cond);
+
+        // Return a status message and unlock the mutex
+        pthread_mutex_unlock(&queue->lock);
+        return AQ_ALARM;
+    }
+    else if (queue->head != NULL) {
+        // Set the pointer to the message of the head note
+        *msg = queue->head->message;
+
+        // Temporarily store the head note
+        Node *temp = queue->head;
+
+        // Move the head pointer to the next node
+        queue->head = queue->head->next;
+
+        // If the list is empty, also reset the tail
+        if(queue->head == NULL){
+            queue->tail = NULL;
+        }
+
+        // Free the memory of the original head note
+        free(temp);
+
+        // Return a status message and unlock the mutex
+        pthread_mutex_unlock(&queue->lock);
+        return  AQ_NORMAL;
+    }
+    else {
+        // If no messages are present in the queue.
+        // Set the pointer to null
+        *msg = NULL;
+
+        // Return a status message and unlock the mutex
+        pthread_mutex_unlock(&queue->lock);
+        return AQ_NO_MSG;
+    }
+}
 
 int aq_size( AlarmQueue aq) {
     Queue *queue = (Queue * )aq;
