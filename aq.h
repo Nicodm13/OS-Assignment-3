@@ -47,7 +47,7 @@ typedef struct {
     pthread_mutex_t lock;
     pthread_cond_t msg_cond;
     pthread_cond_t alarm_cond;
-} SafeThreadQueue;
+} ThreadSafeQueue;
 
 /**
  * @name    aq_create

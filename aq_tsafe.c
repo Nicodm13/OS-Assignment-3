@@ -9,7 +9,7 @@
 #include "stdlib.h"
 
 AlarmQueue aq_create( ) {
-    SafeThreadQueue *queue = malloc(sizeof(SafeThreadQueue));
+    ThreadSafeQueue *queue = malloc(sizeof(ThreadSafeQueue));
     if(queue == NULL){
         // Return NULL if the memory allocation fails
         return NULL;
@@ -30,7 +30,7 @@ AlarmQueue aq_create( ) {
 }
 
 int aq_send( AlarmQueue aq, void * msg, MsgKind k){
-    SafeThreadQueue *queue = (SafeThreadQueue *)aq;
+    ThreadSafeQueue *queue = (ThreadSafeQueue *)aq;
 
     // Lock the queue for any other threads
     pthread_mutex_lock(&queue->lock);
@@ -92,7 +92,7 @@ int aq_send( AlarmQueue aq, void * msg, MsgKind k){
 
 
 int aq_recv( AlarmQueue aq, void **msg) {
-    SafeThreadQueue *queue = (SafeThreadQueue *)aq;
+    ThreadSafeQueue *queue = (ThreadSafeQueue *)aq;
     pthread_mutex_lock(&queue->lock);
 
     // Wait until a message is available
