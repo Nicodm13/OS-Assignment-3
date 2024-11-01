@@ -9,6 +9,7 @@
 #define LIBAQ_H_INCLUDED
 
 #include <stddef.h>
+#include <pthread.h>
 
 /**
  * @brief Messages are transferred as pointers to blocks allocated by malloc
@@ -38,6 +39,15 @@ typedef struct {
     Node *tail;
     void *alarm_msg;
 } Queue;
+
+typedef struct {
+    Node *head;
+    Node *tail;
+    void *alarm_msg;
+    pthread_mutex_t lock;
+    pthread_cond_t msg_cond;
+    pthread_cond_t alarm_cond;
+} SafeThreadQueue;
 
 /**
  * @name    aq_create
