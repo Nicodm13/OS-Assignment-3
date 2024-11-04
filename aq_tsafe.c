@@ -29,66 +29,51 @@ AlarmQueue aq_create( ) {
     return (AlarmQueue)queue;
 }
 
-int aq_send( AlarmQueue aq, void * msg, MsgKind k){
+int aq_send(AlarmQueue aq, void *msg, MsgKind k) {
     ThreadSafeQueue *queue = (ThreadSafeQueue *)aq;
 
-    // Lock the queue for any other threads
     pthread_mutex_lock(&queue->lock);
 
-    // Check whether this message is an alarm
-    if(k == AQ_ALARM) {
-        while (queue->alarm_msg != NULL){
-            // Alarm Message is already present, block all threads until the alarm has been processed
-            pthread_cond_wait(&queue->alarm_cond, &queue->lock);
-
-            // Return an error
+    if (k == AQ_ALARM) {
+        if (queue->alarm_msg != NULL) {
+            // Alarm message already present, return without waiting
+            pthread_mutex_unlock(&queue->lock);
             return AQ_NO_ROOM;
         }
-        // Set the new alarm message
+
+        // Set the alarm message
         queue->alarm_msg = msg;
 
-        // Signal that an alarm has been added
-        pthread_cond_signal(&queue->alarm_cond);
+        // Signal the alarm condition
+        pthread_cond_signal(&queue->msg_cond);
 
-        // Return success and unlock the queue
         pthread_mutex_unlock(&queue->lock);
         return 0;
-    }
-    else {
+    } else {
         Node *newNode = malloc(sizeof(Node));
-
-        if(newNode == NULL){
-            // Unlock the queue, as no node has been created
+        if (newNode == NULL) {
             pthread_mutex_unlock(&queue->lock);
-
-            // Return uninitialized as the memory allocation failed
             return AQ_UNINIT;
         }
 
-        // Initialize the new node, which is last in the list
         newNode->message = msg;
         newNode->next = NULL;
 
-        // Check if the queue is empty
-        if(queue->tail == NULL) {
-            // Queue is empty, the new node is both head and tail
+        if (queue->tail == NULL) {
             queue->head = newNode;
             queue->tail = newNode;
-        }
-        else{
-            // If the queue is not empty, append the new node at the end
+        } else {
             queue->tail->next = newNode;
             queue->tail = newNode;
         }
 
-        // Signal that a normal message has been added
         pthread_cond_signal(&queue->msg_cond);
 
-        // Return success and unlock the queue
         pthread_mutex_unlock(&queue->lock);
         return 0;
     }
 }
+
 
 
 int aq_recv( AlarmQueue aq, void **msg) {
