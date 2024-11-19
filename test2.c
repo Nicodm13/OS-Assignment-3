@@ -13,16 +13,24 @@ static AlarmQueue q;
 
 void *producer(void *arg) {
     put_normal(q, 100);
+    msleep(20);
     put_normal(q, 200);
+    msleep(20);
     put_alarm(q, 300); // Alarm message
+    msleep(20);
     put_normal(q, 400);
-return 0;
+
+    return 0;
 }
 
 void *consumer(void *arg) {
+    msleep(500);
     get(q);
+    msleep(500);
     get(q);
+    msleep(500);
     get(q);
+    msleep(500);
     get(q);
     return 0;
 }
