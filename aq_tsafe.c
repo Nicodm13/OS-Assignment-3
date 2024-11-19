@@ -19,8 +19,6 @@ AlarmQueue aq_create( ) {
     queue->head = NULL;
     queue->tail = NULL;
     queue->alarm_msg = NULL;
-
-    // Initialize the thread safety for the queue
     pthread_mutex_init(&queue->lock, NULL);
     pthread_cond_init(&queue->msg_cond, NULL);
     pthread_cond_init(&queue->alarm_cond, NULL);
@@ -31,47 +29,40 @@ AlarmQueue aq_create( ) {
 
 int aq_send(AlarmQueue aq, void *msg, MsgKind k) {
     ThreadSafeQueue *queue = (ThreadSafeQueue *)aq;
-
     pthread_mutex_lock(&queue->lock);
 
     if (k == AQ_ALARM) {
         if (queue->alarm_msg != NULL) {
-            // Alarm message already present, return without waiting
-            pthread_mutex_unlock(&queue->lock);
-            return AQ_NO_ROOM;
+            // Block until the alarm message is consumed
+            pthread_cond_wait(&queue->alarm_cond, &queue->lock);
         }
 
-        // Set the alarm message
         queue->alarm_msg = msg;
-
-        // Signal the alarm condition
         pthread_cond_signal(&queue->msg_cond);
-
-        pthread_mutex_unlock(&queue->lock);
-        return 0;
-    } else {
-        Node *newNode = malloc(sizeof(Node));
-        if (newNode == NULL) {
-            pthread_mutex_unlock(&queue->lock);
-            return AQ_UNINIT;
-        }
-
-        newNode->message = msg;
-        newNode->next = NULL;
-
-        if (queue->tail == NULL) {
-            queue->head = newNode;
-            queue->tail = newNode;
-        } else {
-            queue->tail->next = newNode;
-            queue->tail = newNode;
-        }
-
-        pthread_cond_signal(&queue->msg_cond);
-
         pthread_mutex_unlock(&queue->lock);
         return 0;
     }
+
+    Node *newNode = malloc(sizeof(Node));
+    if (newNode == NULL) {
+        pthread_mutex_unlock(&queue->lock);
+        return AQ_UNINIT;
+    }
+
+    newNode->message = msg;
+    newNode->next = NULL;
+
+    if (queue->tail == NULL) {
+        queue->head = newNode;
+        queue->tail = newNode;
+    } else {
+        queue->tail->next = newNode;
+        queue->tail = newNode;
+    }
+
+    pthread_cond_signal(&queue->msg_cond);
+    pthread_mutex_unlock(&queue->lock);
+    return 0;
 }
 
 
@@ -85,52 +76,26 @@ int aq_recv( AlarmQueue aq, void **msg) {
         pthread_cond_wait(&queue->msg_cond, &queue->lock);
     }
 
-    // Check whether this is an alarm message, a normal message or no message
-    if(queue->alarm_msg != NULL) {
-        // Set the pointer to the alarm message
+    // Prioritize alarm messages
+    if (queue->alarm_msg != NULL) {
         *msg = queue->alarm_msg;
-
-        // Clear the alarm message from the queue
         queue->alarm_msg = NULL;
-
-        // Signal an alarm message for the queue
         pthread_cond_signal(&queue->alarm_cond);
-
-        // Return a status message and unlock the mutex
         pthread_mutex_unlock(&queue->lock);
         return AQ_ALARM;
     }
-    else if (queue->head != NULL) {
-        // Set the pointer to the message of the head note
-        *msg = queue->head->message;
 
-        // Temporarily store the head note
-        Node *temp = queue->head;
-
-        // Move the head pointer to the next node
-        queue->head = queue->head->next;
-
-        // If the list is empty, also reset the tail
-        if(queue->head == NULL){
-            queue->tail = NULL;
-        }
-
-        // Free the memory of the original head note
-        free(temp);
-
-        // Return a status message and unlock the mutex
-        pthread_mutex_unlock(&queue->lock);
-        return  AQ_NORMAL;
+    // Handle normal messages
+    Node *temp = queue->head;
+    *msg = temp->message;
+    queue->head = temp->next;
+    if (queue->head == NULL) {
+        queue->tail = NULL;
     }
-    else {
-        // If no messages are present in the queue.
-        // Set the pointer to null
-        *msg = NULL;
+    free(temp);
 
-        // Return a status message and unlock the mutex
-        pthread_mutex_unlock(&queue->lock);
-        return AQ_NO_MSG;
-    }
+    pthread_mutex_unlock(&queue->lock);
+    return AQ_NORMAL;
 }
 
 int aq_size( AlarmQueue aq) {
