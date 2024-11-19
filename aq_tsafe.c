@@ -32,7 +32,7 @@ int aq_send(AlarmQueue aq, void *msg, MsgKind k) {
     pthread_mutex_lock(&queue->lock);
 
     if (k == AQ_ALARM) {
-        if (queue->alarm_msg != NULL) {
+        while (queue->alarm_msg != NULL) {
             // Block until the alarm message is consumed
             pthread_cond_wait(&queue->alarm_cond, &queue->lock);
         }
