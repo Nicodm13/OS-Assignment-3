@@ -8,6 +8,17 @@
 #include "aq.h"
 #include "stdlib.h"
 
+typedef struct Node {
+    void *message;
+    struct Node *next;
+} Node;
+
+typedef struct {
+    Node *head;
+    Node *tail;
+    void *alarm_msg;
+} Queue;
+
 AlarmQueue aq_create( ) {
     Queue *queue = malloc(sizeof(Queue));
     if(queue == NULL){

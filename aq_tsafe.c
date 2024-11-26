@@ -8,6 +8,20 @@
 #include "aq.h"
 #include "stdlib.h"
 
+typedef struct Node {
+    void *message;
+    struct Node *next;
+} Node;
+
+typedef struct {
+    Node *head;
+    Node *tail;
+    void *alarm_msg;
+    pthread_mutex_t lock;
+    pthread_cond_t msg_cond;
+    pthread_cond_t alarm_cond;
+} ThreadSafeQueue;
+
 AlarmQueue aq_create( ) {
     ThreadSafeQueue *queue = malloc(sizeof(ThreadSafeQueue));
     if(queue == NULL){
@@ -99,7 +113,7 @@ int aq_recv( AlarmQueue aq, void **msg) {
 }
 
 int aq_size( AlarmQueue aq) {
-    Queue *queue = (Queue * )aq;
+    ThreadSafeQueue *queue = (ThreadSafeQueue * )aq;
     int count = 0;
 
     // Loop through the list to count the normal messages
@@ -114,7 +128,7 @@ int aq_size( AlarmQueue aq) {
 }
 
 int aq_alarms( AlarmQueue aq) {
-    Queue *queue = (Queue * )aq;
+    ThreadSafeQueue *queue = (ThreadSafeQueue * )aq;
 
     // Return 1 to if there is an alarm message present, otherwise return 0
     return (queue->alarm_msg != NULL ? 1 : 0);

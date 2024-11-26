@@ -29,26 +29,6 @@ typedef char MsgKind;
 
 typedef void * AlarmQueue;  // Opaque type 
 
-typedef struct Node {
-    void *message;
-    struct Node *next;
-} Node;
-
-typedef struct {
-    Node *head;
-    Node *tail;
-    void *alarm_msg;
-} Queue;
-
-typedef struct {
-    Node *head;
-    Node *tail;
-    void *alarm_msg;
-    pthread_mutex_t lock;
-    pthread_cond_t msg_cond;
-    pthread_cond_t alarm_cond;
-} ThreadSafeQueue;
-
 /**
  * @name    aq_create
  * @brief   Creates and initializes an alarm queue
